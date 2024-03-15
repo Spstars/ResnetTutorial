@@ -18,6 +18,17 @@ def conv2D(input_channel, output_channel, kernel_size=(3, 3), stride=(1, 1), pad
             sp와 hp를 stride와 padding을 통해 원래 위치를 유추해서
             elementwise 연산을 구현
         """
+        w,h = kernel_size
+        sum_element =0
+
+        for j in range(hp):
+            for i in range(sp):
+                # 좌표 = x +padding +x*stride와 filter사이에 연산
+                for m in range(kernel_size[0]):
+                    for n in range(kernel_size[0]):
+                        # -1 
+                        sum_element =kernel_size[m][n] * input_feature[j+padding+j*stride[0]][i+padding+i*stride[0]]  
+
         print(213)
 
 
@@ -38,17 +49,17 @@ def conv2D(input_channel, output_channel, kernel_size=(3, 3), stride=(1, 1), pad
         #일단 커스텀 이니까.
         filter = [[1,2,1],[0,0,0],[-1,-2,-1]]
         output_width = (width -kernel_size[0] + 2*padding[0] +1)/stride[0]
-        w,h = kernel_size
+
 
         #np.zeros (batch,channel ,width, height)
         output_feature = [[[[ 0 for _ in range(output_width)] for _ in range(output_width)] for _ in range(output_channel)]  for _ in range(num_batch) ]
         for b in range(num_batch):
             for c in range(num_channel):
                 #시작점을 찾아서, 무조건 정사각형 가정하겠음.
-                for sp in range(0,output_width):
-                    for hp in range(0,output_width):
+                for hp in range(0,output_width):
+                    for sp in range(0,output_width):
                         #conv 연산
-                        output_feature[b][c][sp][hp] = elementwise(input_feature,filter,sp,hp)
+                        output_feature[b][c][hp][sp] = elementwise(input_feature[b][c],filter,sp,hp)
 
         return output_feature
     
