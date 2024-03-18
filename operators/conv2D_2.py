@@ -2,7 +2,7 @@ import numpy as np
 
 
 
-class conv2D():
+def conv2D_2(input_channel, output_channel, kernel_size=(3, 3), stride=(1, 1), padding=1, bias=False,dlilation=None):
     """
         Resnet에서 사용되는 conv2D 구현.
         diliation은 하지 않을 것 같고,
@@ -11,21 +11,10 @@ class conv2D():
         맨처음 conv 연산은 7x7에 stride 2 padding 3이다.
         bias=True가 보이지 않으므로  bias는 쓰지 않을것
     """
-
-    def __init__(self,input_channel, output_channel, kernel_size=(3, 3), stride=(1, 1), padding=1, bias=False,dlilation=None):
-        self.input_channel = input_channel
-        self.output_channel = output_channel
-        self.kernel_size = kernel_size
-        self.stride = stride
-        self.padding = padding
-        self.bias = bias
-        self.dliation= dlilation
-        #여기서 shape 크기 비교해서 다르면 error assert
-        self.weight = [[1 for _ in range(kernel_size[0])] for _ in range(kernel_size[1])]
-
-
+    #여기서 shape 크기 비교해서 다르면 error assert
+    filter = [[1 for _ in range(kernel_size[0])] for _ in range(kernel_size[1])]
     #곱 구현
-    def elementwise(self, input_feature,filter,sp,hp):
+    def elementwise(input_feature,filter,sp,hp):
         """
             여기서는 input_feature,weight,sp,hp를 받아서,
             sp와 hp를 stride와 padding을 통해 원래 위치를 유추해서
@@ -36,25 +25,23 @@ class conv2D():
         # for j in range(padding,hp,stride[0]):
         #     for i in range(padding,sp,stride[0]):
                 # 좌표 = x +padding +x*stride와 filter사이에 연산
-        for m in range(self.kernel_size[1]):
-            for n in range(self.kernel_size[0]):
+        for m in range(kernel_size[1]):
+            for n in range(kernel_size[0]):
                 # print("y좌표 ",padding+ stride[0] *(hp)+m-kernel_size[0]//2)
                 # print("x좌표 ",padding+ stride[0] *(sp)+n-kernel_size[0]//2)
-                sum_element += self.weight[m][n] * input_feature[self.padding+self.stride[0] *(hp)+m-self.kernel_size[0]//2][self.padding+self.stride[0] *(sp)+n-self.kernel_size[0]//2]  
+                sum_element += filter[m][n] * input_feature[padding+stride[0] *(hp)+m-kernel_size[0]//2][padding+stride[0] *(sp)+n-kernel_size[0]//2]  
         return sum_element
 
 
-    def conv(self,input_feature):
+    def conv(input_feature):
         #... why not numpy...?
         num_batch =len(input_feature)
         num_channel = len(input_feature[0])
+        
         width= len(input_feature[0][0])
-        padding = self.padding
-        kernel_size = self.kernel_size
-        stride = self.stride
-        output_channel =self.output_channel
+        print(num_batch,num_channel)
         #만약 padding >0 이면
-        if self.padding >0:
+        if padding >0:
             for b in range(num_batch):
                 for c in range(num_channel):
                     input_feature[b][c] =[[0]*(width+2*padding)]*padding + [[0]*padding+feature+[0]*padding for feature in input_feature[b][c]]+ [[0]*(width+2*padding)]*padding 
@@ -75,12 +62,8 @@ class conv2D():
                 for hp in range(0,output_width):
                     for sp in range(0,output_width):
                         #conv 연산
-                        output_feature[b][c][hp][sp] = self.elementwise(input_feature[b][c],filter,sp,hp)
+                        output_feature[b][c][hp][sp] = elementwise(input_feature[b][c],filter,sp,hp)
 
         return output_feature
     
-    def init_weight(self,weight,bias=0):
-        self.weight=weight
-
-    def __call__(self, input_feature) :
-        return self.conv(input_feature)
+    return conv
