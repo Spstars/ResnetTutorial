@@ -21,7 +21,8 @@ class resnet50():
         self.layer0_0_conv1 = nn.conv2D(3,64,kernel_size=(7,7),stride=(2,2),padding=(3,3))
         self.layer0_0_bn1 = nn.batchNorm2D(64)
 
-        #first layer
+        #first layer... 나중에 압축하자.
+
         self.layer1_0_conv1 = nn.conv2D(64,64,kernel_size=(1,1),stride=(1,1),padding=0,bias=False)
         self.layer1_0_bn1 = nn.batchNorm2D(64)
         self.layer1_0_conv2 = nn.conv2D(64,64,kernel_size=(3,3),stride=(1,1),padding=1,bias=False)
@@ -188,6 +189,22 @@ class resnet50():
         for i in range(1,5):
             getattr(self,f"layer{i}_0_downsample_conv1").init_weight(f"layer{i}.0.downsample.0.weight")
             getattr(self,f"layer{i}_0_downsample_bn1").init_mean_weight(weight[f'layer{i}.0.downsample.1.running_mean'],weight[f'layer{i}.0.downsample.1.running_var'],weight[f'layer{i}.0.downsample.1.weight'],weight[f'layer{i}.0.downsample.1.bias'])
+
+    def forward(self,x):
+        layer0 = self.layer0_0_bn1(self.layer0_0_conv1(x))
+        #두개 합 구현...
+        layer1 = self.layer1_0_donwsample_bn1(self.layer1_0_downsample_conv1(layer0)) + \
+            self.layer1_0_bn3(self.layer1_0_conv3(self.layer1_0_bn2(self.layer1_0_conv2(self.layer1_0_bn1(self.layer1_0_conv1(layer0))))))
+        
+        layer2 = self.layer2_0_donwsample_bn1(self.layer2_0_downsample_conv1(layer0)) + \
+            self.layer2_0_bn3(self.layer2_0_conv3(self.layer2_0_bn2(self.layer2_0_conv2(self.layer1_0_bn1(self.layer2_0_conv1(layer1))))))
+        
+        layer3 = self.layer3_0_donwsample_bn1(self.layer3_0_downsample_conv1(layer0)) + \
+            self.layer1_0_bn3(self.layer1_0_conv3(self.layer1_0_bn2(self.layer1_0_conv2(self.layer1_0_bn1(self.layer1_0_conv1(layer2))))))
+        
+        layer4 = self.layer4_0_donwsample_bn1(self.layer4_0_downsample_conv1(layer0)) + \
+            self.layer1_0_bn3(self.layer1_0_conv3(self.layer1_0_bn2(self.layer1_0_conv2(self.layer1_0_bn1(self.layer1_0_conv1(layer3))))))
+       
 resnet= resnet50({123:12})
 
 print(resnet)
