@@ -10,7 +10,7 @@ class relu:
     """
     def __init__(self,inplace=True):
         pass
-    def Relu(input_feature):
+    def Relu(self,input_feature):
         batch,channel,length = len(input_feature),len(input_feature[0]),len(input_feature[0][0])
 
         for b in range(batch):

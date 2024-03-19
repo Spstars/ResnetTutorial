@@ -22,14 +22,17 @@ class batchNorm2D:
     # batch와 채널을 다 풀고, input_feature에 running_mean과 running_var로 나눈다.
     def _norm2D(self,input_features):
         batch,channel ,length= len(input_features),len(input_features[0]), len(input_features[0][0])
+
         output= [[[ [ self.weight[b]* ((input_features[b][c][lh][lw] -self.running_mean[b]) / math.sqrt(self.running_var[b]+self.eps))+ self.bias[b]  for lw in range(length)] for lh in range(length)] for c in range(channel)]  for b in range(batch) ]
+        print("batchnorm2d : ", batch,channel,length,len(output[0][0][0]))
+       
         return output
 
 
     def init_mean_weight(self,running_mean,running_var,weight,bias):
-        self.running_mean=running_mean
-        self.running_var =running_var
-        self.weight=weight
-        self.bias =bias
+        self.running_mean=running_mean.tolist()
+        self.running_var =running_var.tolist()
+        self.weight=weight.tolist()
+        self.bias =bias.tolist()
     def __call__(self, input_features) -> Any:
         return self._norm2D(input_features)

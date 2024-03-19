@@ -5,3 +5,5 @@ from .batchNorm2D import batchNorm2D
 from .conv2D import conv2D
 from .fc import fc
 from .relu import relu
+from .maxpool import maxpool
+from .softmax import softmax

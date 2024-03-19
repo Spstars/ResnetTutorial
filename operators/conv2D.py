@@ -1,7 +1,4 @@
-import numpy as np
-
-
-
+import torch
 class conv2D():
     """
         Resnet에서 사용되는 conv2D 구현.
@@ -21,26 +18,25 @@ class conv2D():
         self.bias = bias
         self.dliation= dlilation
         #여기서 shape 크기 비교해서 다르면 error assert
-        self.weight = [[1 for _ in range(kernel_size[0])] for _ in range(kernel_size[1])]
+        self.weight = [[[[1 for _ in range(kernel_size[0])] for _ in range(kernel_size[1])] for _ in range(input_channel)] for _ in range(output_channel)]
+    
 
 
     #곱 구현
-    def elementwise(self, input_feature,filter,sp,hp):
+    def elementwise(self, input_feature,sp,hp,b):
         """
             여기서는 input_feature,weight,sp,hp를 받아서,
             sp와 hp를 stride와 padding을 통해 원래 위치를 유추해서
             elementwise 연산을 구현
         """
+        num_channel = len(input_feature)
         sum_element =0
-        # out_element=[[0 for _ in range(sp)] for _ in range(hp)]
-        # for j in range(padding,hp,stride[0]):
-        #     for i in range(padding,sp,stride[0]):
-                # 좌표 = x +padding +x*stride와 filter사이에 연산
-        for m in range(self.kernel_size[1]):
-            for n in range(self.kernel_size[0]):
-                # print("y좌표 ",padding+ stride[0] *(hp)+m-kernel_size[0]//2)
-                # print("x좌표 ",padding+ stride[0] *(sp)+n-kernel_size[0]//2)
-                sum_element += self.weight[m][n] * input_feature[self.padding+self.stride[0] *(hp)+m-self.kernel_size[0]//2][self.padding+self.stride[0] *(sp)+n-self.kernel_size[0]//2]  
+        for num_c in range(num_channel):
+            for m in range(self.kernel_size[1]):
+                for n in range(self.kernel_size[0]):
+                    sum_element += self.weight[b][num_c][m][n] \
+                        * input_feature[num_c][self.padding+self.stride[0] *(hp)+m-self.kernel_size[0]//2][self.padding+self.stride[0] *(sp)+n-self.kernel_size[0]//2]  
+
         return sum_element
 
 
@@ -49,10 +45,12 @@ class conv2D():
         num_batch =len(input_feature)
         num_channel = len(input_feature[0])
         width= len(input_feature[0][0])
+       
         padding = self.padding
         kernel_size = self.kernel_size
         stride = self.stride
         output_channel =self.output_channel
+        print("cnn : batch, channel, width,kernel :",num_batch,num_channel,width,kernel_size)
         #만약 padding >0 이면
         if self.padding >0:
             for b in range(num_batch):
@@ -69,18 +67,32 @@ class conv2D():
         #np.zeros (batch,channel ,width, height)
         output_feature = [[[[ 0 for _ in range(output_width)] for _ in range(output_width)] for _ in range(output_channel)]  for _ in range(num_batch) ]
         for b in range(num_batch):
-            for c in range(num_channel):
+            for c in range(output_channel):
                 #시작점을 찾아서, 무조건 정사각형 가정하겠음.
-
                 for hp in range(0,output_width):
                     for sp in range(0,output_width):
                         #conv 연산
-                        output_feature[b][c][hp][sp] = self.elementwise(input_feature[b][c],filter,sp,hp)
+                        output_feature[b][c][hp][sp] = self.elementwise(input_feature[b],sp,hp,b)
 
         return output_feature
     
     def init_weight(self,weight,bias=0):
-        self.weight=weight
+        if isinstance(self.weight,str):
+            print(self.weight)
+        self.weight=weight.tolist()
+ 
 
     def __call__(self, input_feature) :
         return self.conv(input_feature)
+    
+
+if __name__ == "__main__":
+    # conv = conv2D(3,64,kernel_size=(3,3),stride=(1,1),padding=1)
+    # X = torch.randn(size=(1,3,112,112)).tolist()
+
+
+    conv = conv2D(256,128,kernel_size=(1,1),stride=(1,1),padding=0)
+    X2= torch.randn(size = (1,256,28,28)).tolist()
+    print(len(X2),len(X2[0]),len(X2[0][0]))
+    y= conv(X2)
+    print(len(y),len(y[0]),len(y[0][0]))
