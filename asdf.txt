@@ -1,0 +1,10 @@
+        for b in range(num_batch):
+            for cout in range(output_channel):
+                #시작점을 찾아서, 무조건 정사각형 가정하겠음.
+                for cin in range(num_channel):
+                    output_feature[b][cout] = self.convol(input_feature[b],self.weight[cout],output_width)
+
+                    # for hp in range(0,output_width):
+                    #     for sp in range(0,output_width):
+                    #         #conv 연산
+                    #         output_feature[b][c][hp][sp] = self.elementwise(input_feature[b],sp,hp)

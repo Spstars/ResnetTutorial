@@ -3,7 +3,7 @@ from  typing import Any
 
 #import operators from folder
 import operators as nn
-import copy
+import sys
 
 #torchvison to download datasets
 from torchvision import datasets
@@ -82,9 +82,9 @@ class resnet50():
 
         #third layer 
         self.layer3_0_conv1 = nn.conv2D(512,256,kernel_size=(1,1),stride=(1,1),padding=0,bias=False)
-        self.layer3_0_bn1 = nn.batchNorm2D(128)
+        self.layer3_0_bn1 = nn.batchNorm2D(256)
         self.layer3_0_conv2 = nn.conv2D(256,256,kernel_size=(3,3),stride=(2,2),padding=1,bias=False)
-        self.layer3_0_bn2 = nn.batchNorm2D(128)
+        self.layer3_0_bn2 = nn.batchNorm2D(256)
         self.layer3_0_conv3 = nn.conv2D(256,1024,kernel_size=(1,1),stride=(1,1),padding=0,bias=False)
         self.layer3_0_bn3 = nn.batchNorm2D(1024)
 
@@ -175,7 +175,6 @@ class resnet50():
                 getattr(self,f"layer2_{i}_conv{j}").init_weight(weight[f'layer2.{i}.conv{j}.weight'])
                 getattr(self,f"layer2_{i}_bn{j}").init_mean_weight(weight[f'layer2.{i}.bn{j}.running_mean'],weight[f'layer2.{i}.bn{j}.running_var'],weight[f'layer2.{i}.bn{j}.weight'],weight[f'layer2.{i}.bn{j}.bias'])
 
-
         for i in range(6):
             for j in range(1,4):
                 getattr(self,f"layer3_{i}_conv{j}").init_weight(weight[f'layer3.{i}.conv{j}.weight'])
@@ -187,33 +186,47 @@ class resnet50():
                 getattr(self,f"layer4_{i}_bn{j}").init_mean_weight(weight[f'layer4.{i}.bn{j}.running_mean'],weight[f'layer4.{i}.bn{j}.running_var'],weight[f'layer4.{i}.bn{j}.weight'],weight[f'layer4.{i}.bn{j}.bias'])
   
         for i in range(1,5):
-            print("i : ",i)
             getattr(self,f"layer{i}_0_downsample_conv1").init_weight(weight[f"layer{i}.0.downsample.0.weight"])
             getattr(self,f"layer{i}_0_downsample_bn1").init_mean_weight(weight[f'layer{i}.0.downsample.1.running_mean'],weight[f'layer{i}.0.downsample.1.running_var'],weight[f'layer{i}.0.downsample.1.weight'],weight[f'layer{i}.0.downsample.1.bias'])
+
+        self.linear.init_weight(weight['fc.weight'],weight['fc.bias'])
 
     def add_block(self,x,y,):
         """
             (batches, channels, h,w) 인 x,y를 서로 더한다. 
         """
         batch, channel, height = range(len(x)),range(len(x[0])),range(len(x[0][0]))
-        return [[[[x[b][c][h][w] +y[b][c][h][w]  for w in height] for h in height] for c in channel] for b in batch ]
+        return [[[[x[b][c][h][w] + y[b][c][h][w]  for w in height] for h in height] for c in channel] for b in batch ]
+    
     def deepcopy(self,x):
         batch, channel, height = range(len(x)),range(len(x[0])),range(len(x[0][0]))
         return [[[[x[b][c][h][w]  for w in height] for h in height] for c in channel] for b in batch ]
     
+
+    
     def residual_block (self,input_feature,layer_num,layer_idx, downsample=False):
         identity  = self.deepcopy(input_feature)
-        out = input_feature
-        for j in range(1,4):
-            out = getattr(self,f"layer{layer_num}_{layer_idx}_conv{j}")(out)
-            out = getattr(self,f"layer{layer_num}_{layer_idx}_bn{j}")(out)        
+
+        input_feature = getattr(self,f"layer{layer_num}_{layer_idx}_conv1")(input_feature)
+        input_feature = getattr(self,f"layer{layer_num}_{layer_idx}_bn1")(input_feature)   
+        input_feature = self.relu(input_feature)     
+
+
+        input_feature = getattr(self,f"layer{layer_num}_{layer_idx}_conv2")(input_feature)
+        input_feature = getattr(self,f"layer{layer_num}_{layer_idx}_bn2")(input_feature)   
+        input_feature = self.relu(input_feature)     
+
+        input_feature = getattr(self,f"layer{layer_num}_{layer_idx}_conv3")(input_feature)
+        input_feature = getattr(self,f"layer{layer_num}_{layer_idx}_bn3")(input_feature)   
+
+
         #identity mapping 이면
         if not downsample:
-            return self.relu(self.add_block(identity, out))
+            return self.relu(self.add_block(identity, input_feature))
         else :
             identity = getattr(self,f"layer{layer_num}_0_downsample_conv1")(identity)
             identity = getattr(self,f"layer{layer_num}_0_downsample_bn1")(identity)
-            return self.relu(self.add_block(identity, out))
+            return  self.relu(self.add_block(identity, input_feature))
 
 
 
@@ -245,22 +258,15 @@ class resnet50():
         x = self.residual_block(x,4,0,True)
         x = self.residual_block(x,4,1,False)
         x = self.residual_block(x,4,2,False)
-
-        x= self.avgpool2d(x)
+        return self.avgpool2d(x)
         return self.linear(x)
-
-        
-        # #두개 합 구현...
-        # layer1_0 = self.layer1_0_downsample_bn1(self.layer1_0_downsample_conv1(layer0)) + self.relu(self.layer1_0_bn3(self.layer1_0_conv3(self.layer1_0_bn2(self.layer1_0_conv2(self.layer1_0_bn1(self.layer1_0_conv1(layer0)))))))
-
-        # layer2 = self.layer2_0_donwsample_bn1(self.layer2_0_downsample_conv1(layer0)) + \
-        #     self.layer2_0_bn3(self.layer2_0_conv3(self.layer2_0_bn2(self.layer2_0_conv2(self.layer1_0_bn1(self.layer2_0_conv1())))))
-        
-        # layer3 = self.layer3_0_donwsample_bn1(self.layer3_0_downsample_conv1(layer0)) + \
-        #     self.layer1_0_bn3(self.layer1_0_conv3(self.layer1_0_bn2(self.layer1_0_conv2(self.layer1_0_bn1(self.layer1_0_conv1(layer2))))))
-        
-        # layer4 = self.layer4_0_donwsample_bn1(self.layer4_0_downsample_conv1(layer0)) + \
-        #     self.layer1_0_bn3(self.layer1_0_conv3(self.layer1_0_bn2(self.layer1_0_conv2(self.layer1_0_bn1(self.layer1_0_conv1(layer3))))))
        
 if __name__ =="__main__":
-    print(123)
+    X_t = torch.randn(size=(1,3,112,112))
+    X =  X_t.tolist()
+    resnet = resnet50()
+    resnet.load_state_dict()
+    conv2 = torch.nn.Conv2d(3,64,kernel_size=(7,7),stride=(2,2),padding=3)
+    conv2.weight=torch.load("pretrained_weight.pth")['conv1.weight']
+    print(conv2(torch.tensor(X_t))[0][0][0][:5])
+    pred_y2 = resnet.forward(X)
