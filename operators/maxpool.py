@@ -11,10 +11,6 @@ class maxpool:
         self.dlilation = 1 # 기존 방법으로 처리하면 될듯
         self.negative_inf = float("-inf") #여기서는 패딩이 음의 무한대(maxpool)
 
-    #224+6+1-7 /2 =112
-    #(112 +2 +1 -3 )/2 =56 
-    #maxpooling이 원래는 안 겹쳐야하는데...?
-    #하나 겹치는 게 맞는듯
     def maxpooling(self,input_feature):
         num_batch =len(input_feature)
         num_channel = len(input_feature[0])

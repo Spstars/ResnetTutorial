@@ -190,7 +190,7 @@ class resnet50():
             getattr(self,f"layer{i}_0_downsample_bn1").init_mean_weight(weight[f'layer{i}.0.downsample.1.running_mean'],weight[f'layer{i}.0.downsample.1.running_var'],weight[f'layer{i}.0.downsample.1.weight'],weight[f'layer{i}.0.downsample.1.bias'])
 
         self.linear.init_weight(weight['fc.weight'],weight['fc.bias'])
-
+    
     def add_block(self,x,y,):
         """
             (batches, channels, h,w) 인 x,y를 서로 더한다. 
@@ -200,33 +200,31 @@ class resnet50():
     
     def deepcopy(self,x):
         batch, channel, height = range(len(x)),range(len(x[0])),range(len(x[0][0]))
-        return [[[[x[b][c][h][w]  for w in height] for h in height] for c in channel] for b in batch ]
+        return [[[[x[b][c][h][w] for w in height] for h in height] for c in channel] for b in batch ]
     
 
     
     def residual_block (self,input_feature,layer_num,layer_idx, downsample=False):
         identity  = self.deepcopy(input_feature)
 
-        input_feature = getattr(self,f"layer{layer_num}_{layer_idx}_conv1")(input_feature)
-        input_feature = getattr(self,f"layer{layer_num}_{layer_idx}_bn1")(input_feature)   
-        input_feature = self.relu(input_feature)     
+        out = getattr(self,f"layer{layer_num}_{layer_idx}_conv1")(input_feature)
+        out = getattr(self,f"layer{layer_num}_{layer_idx}_bn1")(out)   
+        out = self.relu(out)
 
+        out = getattr(self,f"layer{layer_num}_{layer_idx}_conv2")(out)
+        out = getattr(self,f"layer{layer_num}_{layer_idx}_bn2")(out)   
+        out = self.relu(out)
 
-        input_feature = getattr(self,f"layer{layer_num}_{layer_idx}_conv2")(input_feature)
-        input_feature = getattr(self,f"layer{layer_num}_{layer_idx}_bn2")(input_feature)   
-        input_feature = self.relu(input_feature)     
-
-        input_feature = getattr(self,f"layer{layer_num}_{layer_idx}_conv3")(input_feature)
-        input_feature = getattr(self,f"layer{layer_num}_{layer_idx}_bn3")(input_feature)   
-
+        out = getattr(self,f"layer{layer_num}_{layer_idx}_conv3")(out)
+        out = getattr(self,f"layer{layer_num}_{layer_idx}_bn3")(out)   
 
         #identity mapping 이면
         if not downsample:
-            return self.relu(self.add_block(identity, input_feature))
+            return self.relu(self.add_block(identity, out))
         else :
             identity = getattr(self,f"layer{layer_num}_0_downsample_conv1")(identity)
             identity = getattr(self,f"layer{layer_num}_0_downsample_bn1")(identity)
-            return  self.relu(self.add_block(identity, input_feature))
+            return self.relu(self.add_block(identity, out))
 
 
 
@@ -236,7 +234,7 @@ class resnet50():
 
     def forward(self,x):
         print("shape, ",len(x),len(x[0]),len(x[0][0]))
-        x = self.layer0_0_maxpool1(self.layer0_0_bn1(self.layer0_0_conv1(x)))
+        x = self.layer0_0_maxpool1(self.relu(self.layer0_0_bn1(self.layer0_0_conv1(x))))
 
         #true면 convolution block이지만, 함수 한번에 구현하는게 편하니까..
         x = self.residual_block(x,1,0,True)
