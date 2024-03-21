@@ -256,7 +256,7 @@ class resnet50():
         x = self.residual_block(x,4,0,True)
         x = self.residual_block(x,4,1,False)
         x = self.residual_block(x,4,2,False)
-        return self.avgpool2d(x)
+        x= self.avgpool2d(x)
         return self.linear(x)
        
 if __name__ =="__main__":
