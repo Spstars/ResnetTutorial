@@ -21,6 +21,7 @@ class relu:
 
         return input_feature
 
+
     def __call__(self, input_feature) -> Any:
         return self.Relu(input_feature)
 

@@ -8,7 +8,7 @@ class maxpool:
         self.kernel_size =kernel_size
         self.stride = stride if stride is not None else kernel_size
         self.padding = padding
-        self.dlilation = 1 # 기존 방법으로 처리하면 될듯
+        self.dlilation = 1 
         self.negative_inf = float("-inf") #여기서는 패딩이 음의 무한대(maxpool)
 
     def maxpooling(self,input_feature):
@@ -20,10 +20,11 @@ class maxpool:
         if self.padding >0:
             for b in range(num_batch):
                 for c in range(num_channel):
-                    input_feature[b][c] =[[self.negative_inf]*(width+2*padding)]*padding + [[self.negative_inf]*padding+feature+[self.negative_inf]*padding for feature in input_feature[b][c]]+ [[self.negative_inf]*(width+2*padding)]*padding 
+                    input_feature[b][c] =[[self.negative_inf]*(width+2*padding)]*padding + \
+                        [[self.negative_inf]*padding+feature+[self.negative_inf]*padding for feature in input_feature[b][c]]+ \
+                            [[self.negative_inf]*(width+2*padding)]*padding 
 
-             #np.zeros (batch,channel ,width, height)
-        print(width//2)
+
         output_feature = [[[[ 0 for _ in range(width//2)] for _ in range(width//2)] for _ in range(num_channel)]  for _ in range(num_batch) ]
         for b in range(num_batch):
             for c in range(num_channel):
@@ -46,6 +47,8 @@ class maxpool:
                 if input_feature[origin_coord_y][origin_coord_x] >= maxelement:
                     maxelement = input_feature[origin_coord_y][origin_coord_x]
         return maxelement
+    
+    
     def __call__(self, input) -> Any:
         return self.maxpooling(input)
     

@@ -16,12 +16,10 @@ class resnet50():
 
         #initial layer
         self.relu = nn.relu(inplace=True)
-
-        #initial layer
         self.layer0_0_conv1 = nn.conv2D(3,64,kernel_size=(7,7),stride=(2,2),padding=3)
         self.layer0_0_bn1 = nn.batchNorm2D(64)
         self.layer0_0_maxpool1 = nn.maxpool(kernel_size=(3,3),stride=(2,2),padding=1)
-        #first layer... 나중에 압축하자.
+        #first layer
 
         self.layer1_0_conv1 = nn.conv2D(64,64,kernel_size=(1,1),stride=(1,1),padding=0,bias=False)
         self.layer1_0_bn1 = nn.batchNorm2D(64)
@@ -233,10 +231,8 @@ class resnet50():
         
 
     def forward(self,x):
-        print("shape, ",len(x),len(x[0]),len(x[0][0]))
         x = self.layer0_0_maxpool1(self.relu(self.layer0_0_bn1(self.layer0_0_conv1(x))))
 
-        #true면 convolution block이지만, 함수 한번에 구현하는게 편하니까..
         x = self.residual_block(x,1,0,True)
         x = self.residual_block(x,1,1,False)
         x = self.residual_block(x,1,2,False)

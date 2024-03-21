@@ -12,7 +12,6 @@ class softmax:
         batch,feature = len(input_feature),len(input_feature[0])
         max_input = [max(b) for b in input_feature]
         scaled_input_feature = [[math.exp(input_feature[i][j]-max_input[i]) for j in range(feature)] for i in range(batch)]
-        
         return [[scaled_input_feature[i][j]/sum(scaled_input_feature[i]) for j in range(feature)] for i in range(batch)]
         
 

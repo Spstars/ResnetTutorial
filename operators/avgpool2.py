@@ -5,10 +5,6 @@ class avgpool2:
     """
     def __init__(self,output_size=(1,1)) :
         self.output_size = output_size
-    #보통... batch * 2048 * h* w 
-    # 결과 값은... batch * 2048 * 1 * 1 (output이 1이니까)
-    def __call__(self,input_feature):
-        return self.forward(input_feature)
 
     def avgpool(self,input_feature):
 
@@ -20,17 +16,21 @@ class avgpool2:
                 for h in range(length):
                     for w in range(length):
                         sum+= input_feature[b][c][h][w]
-                output_list[b][c] = sum / (length * 2)
+                output_list[b][c] = sum / (length * length)
         return output_list
+    
     def forward(self,input_feature):
         return self.avgpool(input_feature)
     
+    def __call__(self,input_feature):
+        return self.forward(input_feature)
+    
 if __name__ =="__main__":
-    arr=[[[[ (i+j) *k for i in range(4)] for j in range(4)] for k in range(4)]  for _ in range(1) ]
+    arr=[[[[ (i+j) *k for i in range(4)] for j in range(4)] for k in range(7)]  for _ in range(1) ]
     avgpool = avgpool2()
     print(arr)
     k= avgpool(arr)
-    
+    print(k)
     # fc = fc.fc(4,1)
     # weight = [[0.5,0.5,0.5,0.5]]
     # bias = [0]

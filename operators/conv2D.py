@@ -17,7 +17,7 @@ class conv2D():
         self.padding = padding
         self.bias = bias
         self.dliation= dlilation
-        #여기서 shape 크기 비교해서 다르면 error assert
+
         self.weight = []
     
 
@@ -29,30 +29,26 @@ class conv2D():
             sp와 hp를 stride와 padding을 통해 원래 위치를 유추해서
             elementwise 연산을 구현
         """
-        # num_channel = len(input_feature)
-        # sum_element =0
-        # for num_c in range(num_channel):
-        #     for m in range(self.kernel_size[1]):
-        #         for n in range(self.kernel_size[0]):
-        #             sum_element += self.weight[b][num_c][m][n] \
-        #                 * input_feature[num_c][self.padding+self.stride[0] *(hp)+m-self.kernel_size[0]//2][self.padding+self.stride[0] *(sp)+n-self.kernel_size[0]//2]  
+    
         sum_element = [[0 for _ in range(output_width)] for _ in range(output_width)]
         cur_weight = self.weight[output_channel]
+
         for m in range(self.kernel_size[1]):
             for n in range(self.kernel_size[0]):
                 input_row = self.padding + m - self.kernel_size[0] // 2
                 input_col = self.padding + n - self.kernel_size[1] // 2
                 for hp in range(output_width):
                     for sp in range(output_width):
-                        # 현재 위치에서 각 채널의 값을 더함
                         for num_c in range(len(input_feature)):
-                            sum_element[hp][sp] += cur_weight[num_c][m][n] * input_feature[num_c][input_row + hp * self.stride[0]][input_col + sp * self.stride[1]]
+                            sum_element[hp][sp] += (cur_weight[num_c][m][n] *
+                                input_feature[num_c][input_row + hp * self.stride[0]][input_col + sp * self.stride[1]])
 
+       
+       
         return sum_element
 
 
     def conv(self,input_feature):
-        #... why not numpy...?
         num_batch =len(input_feature)
         num_channel = len(input_feature[0])
         width= len(input_feature[0][0])
@@ -62,16 +58,25 @@ class conv2D():
         stride = self.stride
         output_channel =self.output_channel
         print("cnn : batch, channel, width,kernel :",num_batch,num_channel,width,kernel_size)
+
+
         #만약 padding >0 이면
         if self.padding >0:
             for b in range(num_batch):
                 for c in range(num_channel):
-                    input_feature[b][c] =[[0]*(width+2*padding)]*padding + [[0]*padding+feature+[0]*padding for feature in input_feature[b][c]]+ [[0]*(width+2*padding)]*padding 
-        output_width = (width - kernel_size[0] + 2*padding +1)//stride[0]
+                    input_feature[b][c] =[[0]*(width+2*padding)]*padding \
+                    + [[0]*padding+feature+[0]*padding for feature in input_feature[b][c]]+ [[0]*(width+2*padding)]*padding 
+        
+        
+        output_width = int((width - kernel_size[0] + 2*padding +1)/stride[0] + 0.5)
+
+        
         output_feature = [[[[ 0 for _ in range(output_width)] for _ in range(output_width)] for _ in range(output_channel)]  for _ in range(num_batch) ]
         for b in range(num_batch):
             for c in range(output_channel):
                     output_feature[b][c] = self.elementwise(input_feature[b],c,output_width)
+
+
         return output_feature
     
     def init_weight(self,weight,bias=0):
